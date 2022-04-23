@@ -8,20 +8,21 @@ impl Vec3 {
     pub fn y(&self) -> f32 { self.1 }
     pub fn z(&self) -> f32 { self.2 }
 
-    fn length_squared(self) -> f32 {
+    pub fn length_squared(self) -> f32 {
         f32::powi(self.0, 2) + f32::powi(self.1, 2) + f32::powi(self.2, 2)
     }
-    fn length(self) -> f32 {
+    pub fn length(self) -> f32 {
         f32::sqrt(self.length_squared())
     }
-    fn dot(u: &Vec3, v: &Vec3) -> f32 {
-        u.0 * v.0 + u.1 * v.1 + u.2 * v.2
-    }
-    fn cross(u: &Vec3, v: &Vec3) -> Vec3 {
-        Vec3(u.1 * v.2 - u.2 * v.1, u.0 * v.0 - u.0 * v.2, u.0 * v.1 - u.1 * v.0)
+    pub fn dot(self, v: Vec3) -> f32 {
+        self.0 * v.0 + self.1 * v.1 + self.2 * v.2
     }
 
-    fn unit_vector(self) -> Vec3 {
+    pub fn cross(self, v: Vec3) -> Vec3 {
+        Vec3(self.1 * v.2 - self.2 * v.1, self.0 * v.0 - self.0 * v.2, self.0 * v.1 - self.1 * v.0)
+    }
+
+    pub fn unit_vector(self) -> Vec3 {
         self / self.length()
     }
 }
@@ -58,7 +59,7 @@ impl Div<f32> for Vec3 {
 impl Mul<f32> for Vec3 {
     type Output = Self;
     fn mul(self, t: f32) -> Self::Output {
-        Vec3(self.0, self.1 * t, self.2 * t)
+        Vec3(self.0 * t, self.1 * t, self.2 * t)
     }
 }
 

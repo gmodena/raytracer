@@ -5,8 +5,8 @@ pub struct Ray(pub Point3D, pub Vec3);
 
 /// Implementation of Section 4.1: The ray Class
 impl Ray {
-    pub fn origin(self) -> Point3D { self.0 }
-    pub fn direction(self) -> Vec3 { self.1 }
+    pub fn origin(&self) -> Point3D { self.0 }
+    pub fn direction(&self) -> Vec3 { self.1 }
 
     /// Section 4.1: The ray Class
     ///
@@ -16,6 +16,6 @@ impl Ray {
     /// * `t`: postion of a point along the ray 𝐏(𝑡). For positive 𝑡, you get only 
     /// the parts in front of 𝐀, and this is what is often called a half-line or ray.
     pub fn at(self, t: f32) -> Vec3 {
-        return self.origin() * t + self.direction()
+        return self.origin() + self.direction() * t
     }
 }
