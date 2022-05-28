@@ -2,15 +2,37 @@ mod vec3;
 mod ray;
 mod hit;
 mod sphere;
+mod camera;
 
 use hit::{HitRecord, Hittable};
 use vec3::{Vec3,Color};
 use ray::Ray;
 use sphere::Sphere;
+use camera::Camera;
+use rand::random;
 
-fn write_color(pixel_color: Color) {
-    let c: f32 = 255.999;
-    println!("{} {} {}\n", (pixel_color.x() * c) as i32, (pixel_color.y() * c) as i32, (pixel_color.z() * c) as i32)
+fn clamp(x: f32, min: f32, max: f32) -> f32 {
+    if x < min {
+        return min;
+    }
+    if x > max {
+        return max;
+    }
+    x
+}
+
+fn write_color(pixel_color: Color, samples_per_pixel: u32) {
+    let c = 256.0;
+    let scale = 1.0 / (samples_per_pixel as f32);
+    let r = pixel_color.x() * scale;
+    let g = pixel_color.y() * scale;
+    let b = pixel_color.z() * scale;
+
+
+    println!("{} {} {}",
+             (c * clamp(r, 0.0, 0.999)) as i32,
+             (c * clamp(g, 0.0, 0.999)) as i32,
+             (c * clamp(b, 0.0, 0.999)) as i32)
 }
 
 /// Returns the position `t` along a ray `r`, if `r` hits the inside of a sphere.
@@ -55,7 +77,7 @@ fn hit_sphere(center: Vec3, radius: f32, r: Ray) -> f32 {
 ///
 /// - `r`: a struct defining origin and direction of  a ray.
 /// - `world`: a sphere implementing the `Hittable` interface. 
-fn ray_color<T: Hittable>(r: Ray, world: &T) -> Color {
+fn ray_color<T: Hittable>(r: Ray, world: &T) -> Vec3 {
     let has_hit: Option<HitRecord> = world.hit(r, 0.0, f32::INFINITY);
     
     has_hit.map(|record| (record.normal + Vec3(1.0, 1.0, 1.0)) * 0.5 )
@@ -70,24 +92,25 @@ fn ray_color<T: Hittable>(r: Ray, world: &T) -> Color {
         })
 }
 
+/**
+inline double random_double() {
+    // Returns a random real in [0,1).
+    return rand() / (RAND_MAX + 1.0);
+}**/
+
+fn random_double() {
+
+}
+
 fn main() {
     // Image
     let aspect_ratio: f32 = 16.0 / 9.0;
+
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
+    let samples_per_pixel = 100;
 
-    // Camera
-    // We setup a virtual viewport through which pass the scene rays.
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    // The distance between the projection plane and the projection point.
-    let focal_length = 1.0;
-
-    let origin = Vec3(0.0, 0.0, 0.0);
-    let horizontal = Vec3(viewport_width, 0.0, 0.0);
-    let vertical = Vec3(0.0, viewport_height, 0.0);
-    let lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - Vec3(0.0, 0.0, focal_length);
-
+    // World
     let world: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere { 
             center: Vec3(0.0, 0.0, -1.0),
@@ -99,18 +122,22 @@ fn main() {
         })
     ];
 
+    // Camera
+    let cam = Camera::new();
+
     println!("P3\n{} {}\n{}", image_width, image_height, 255);
     for j in (0..image_height).rev() {
         eprintln!("Scanlines remaining: {}", j);
         for i in 0..image_width {
-            let u: f32 = i as f32 / (image_width - 1) as f32;
-            let v: f32 = j as f32 / (image_height - 1) as f32;
-            
-            let direction: Vec3 = lower_left_corner + horizontal * u  + vertical * v - origin;
-            
-            let r = Ray(origin, direction);
-            let pixel_color = ray_color(r, &world);
-            write_color(pixel_color)
+            let mut pixel_color = Vec3(0.0, 0.0, 0.0);
+            for s in 0..samples_per_pixel {
+            let u: f32 = (i as f32 + random::<f32>()) / (image_width - 1) as f32;
+            let v: f32 = (j as f32 + random::<f32>()) / (image_height - 1) as f32;
+
+            let r = cam.get_ray(u, v);
+            pixel_color = pixel_color + ray_color(r, &world);
+            }
+            write_color(pixel_color, samples_per_pixel);
        }
     }
     eprintln!("Done.");
