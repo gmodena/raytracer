@@ -23,10 +23,12 @@ fn clamp(x: f32, min: f32, max: f32) -> f32 {
 
 fn write_color(pixel_color: Color, samples_per_pixel: u32) {
     let c = 256.0;
+
+    // Divide the color by the number of samples and gamma-correct for gamma=2.0.
     let scale = 1.0 / (samples_per_pixel as f32);
-    let r = pixel_color.x() * scale;
-    let g = pixel_color.y() * scale;
-    let b = pixel_color.z() * scale;
+    let r = f32::sqrt(pixel_color.x() * scale);
+    let g = f32::sqrt(pixel_color.y() * scale);
+    let b = f32::sqrt(pixel_color.z() * scale);
 
 
     println!("{} {} {}",
@@ -77,30 +79,31 @@ fn hit_sphere(center: Vec3, radius: f32, r: Ray) -> f32 {
 ///
 /// - `r`: a struct defining origin and direction of  a ray.
 /// - `world`: a sphere implementing the `Hittable` interface. 
-fn ray_color<T: Hittable>(r: Ray, world: &T) -> Vec3 {
-    let has_hit: Option<HitRecord> = world.hit(r, 0.0, f32::INFINITY);
-    
-    has_hit.map(|record| (record.normal + Vec3(1.0, 1.0, 1.0)) * 0.5 )
-        .unwrap_or({
+fn ray_color<T: Hittable>(r: Ray, world: &T, depth: u32) -> Vec3 {
+    if depth <= 0 {
+        return Vec3(0.0, 0.0, 0.0)
+    }
+
+    // Ignore hits very near zero to fix shadow acne.
+    let has_hit: Option<HitRecord> = world.hit(r, 0.001, f32::INFINITY);
+ 
+    match has_hit {
+        Some(record) => {
+            let target = record.p + vec3::random_in_hemisphere(record.normal);
+            ray_color(Ray(record.p, target - record.p), world, depth-1) * 0.5
+        }
+        None => {
             let unit_direction: Vec3 = r.direction().unit_vector();
             let t = 0.5 * (unit_direction.y() + 1.0);
             // Here Vec3(1.0, 1.0, 1.0) is the color white; and Vec3(0.5, 0.7, 1.0
             // is the color blue. Both are expressed as RGB values.
-            // We scale 0.0 <= t <= 1 so that when t = 1.0 we get blue. When t = 0.0 we get white. 
+            // We scale 0.0 <= t <= 1 so that when t = 1.0 we get blue. When t = 0.0 we get white.
             // In between, we get a linear blend.
             Vec3(1.0, 1.0, 1.0) * (1.0 - t) + Vec3(0.5, 0.7, 1.0) * t
-        })
+        }
+    }
 }
 
-/**
-inline double random_double() {
-    // Returns a random real in [0,1).
-    return rand() / (RAND_MAX + 1.0);
-}**/
-
-fn random_double() {
-
-}
 
 fn main() {
     // Image
@@ -125,6 +128,9 @@ fn main() {
     // Camera
     let cam = Camera::new();
 
+    // Limit the number of child rays
+    let max_depth = 50;
+
     println!("P3\n{} {}\n{}", image_width, image_height, 255);
     for j in (0..image_height).rev() {
         eprintln!("Scanlines remaining: {}", j);
@@ -135,7 +141,7 @@ fn main() {
             let v: f32 = (j as f32 + random::<f32>()) / (image_height - 1) as f32;
 
             let r = cam.get_ray(u, v);
-            pixel_color = pixel_color + ray_color(r, &world);
+            pixel_color = pixel_color + ray_color(r, &world, max_depth);
             }
             write_color(pixel_color, samples_per_pixel);
        }

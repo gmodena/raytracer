@@ -1,4 +1,41 @@
 use std::ops::{Neg, Add, Sub, Div, Mul};
+use rand::{thread_rng, Rng};
+
+fn random(min: Option<f32>, max: Option<f32>) -> Vec3 {
+    let mut rng = thread_rng();
+
+    let a = min.unwrap_or(0.0);
+    let b = max.unwrap_or(1.0);
+
+    Vec3(rng.gen_range(a..=b), rng.gen_range(a..=b), rng.gen_range(a..=b))
+}
+
+// Hack that approximates a Lambertian pattern
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let p = random(Some(-1.0), Some(1.0));
+        if p.length_squared() < 1.0 {
+            return p
+        }
+    }
+}
+
+// True Lambertian Reflection. Generates more uniform rays of light.
+pub fn random_unit_vector() -> Vec3 {
+    Vec3::unit_vector(random_in_unit_sphere())
+}
+
+// Naive method; reflection does not depend on the angle from normal.
+// scatter direction if uniform for all angles away from the hit point,
+pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+
+    if in_unit_sphere.dot(normal) > 0.0 { // In the same hemisphere as the normal
+        return in_unit_sphere;
+    }
+    return -in_unit_sphere
+}
+
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3(pub f32, pub f32, pub f32);
