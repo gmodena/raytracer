@@ -114,13 +114,17 @@ fn ray_color<T: Hittable>(r: Ray, world: &T, depth: u32) -> Vec3 {
 
 
 fn main() {
+    // World
+    let R = (std::f32::consts::PI/4.0).tan();
+
+
     // Image
     let aspect_ratio: f32 = 16.0 / 9.0;
 
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
     // Camera
-    let cam = Camera::new();
+    let cam = Camera::new(Vec3(-2.0, 2.0, 1.0), Vec3(0.0, 0.0, -1.0), Vec3(0.0, 1.0, 0.0), 90.0, aspect_ratio);
     let samples_per_pixel = 100;
      // Limit the number of child rays
     let max_depth = 50;
@@ -128,6 +132,21 @@ fn main() {
 
     // World
     let world: Vec<Box<dyn Hittable>> = vec![
+ /*       Box::new(Sphere {  
+            center: Vec3(-R, 0.0, -1.0),
+            radius: R,
+            material: Box::new(Lambertian {
+                albedo: Vec3(0.0, 0.0, 1.0)
+            })
+        }),
+        Box::new(Sphere {
+            center: Vec3(R, 0.0, -1.0),
+            radius: R,
+            material: Box::new(Lambertian {
+                albedo: Vec3(1.0, 0.0, 0.0)
+            })
+        }),
+*/
         Box::new(Sphere {  // center sphere
             center: Vec3(0.0, 0.0, -1.0),
             radius: 0.5,
@@ -151,7 +170,7 @@ fn main() {
         }),
         Box::new(Sphere { // left sphere
             center: Vec3(-1.0, 0.0, -1.0),
-            radius: -0.4, // the surface normal points inward
+            radius: -0.45, // the surface normal points inward
              material: Box::new(Dielectric {
                 index_of_refraction: 1.5 // glass
             })
