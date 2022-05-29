@@ -124,7 +124,11 @@ fn main() {
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
     // Camera
-    let cam = Camera::new(Vec3(-2.0, 2.0, 1.0), Vec3(0.0, 0.0, -1.0), Vec3(0.0, 1.0, 0.0), 90.0, aspect_ratio);
+    let lookfrom = Vec3(3.0, 3.0, 2.0);
+    let lookat = Vec3(0.0, 0.0, -1.0);
+    let vup = Vec3(0.0, 1.0, 0.0);
+    let dist_to_focus = (lookfrom-lookat).length();
+    let cam = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, 2.0, dist_to_focus);
     let samples_per_pixel = 100;
      // Limit the number of child rays
     let max_depth = 50;
