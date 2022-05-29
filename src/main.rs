@@ -11,7 +11,7 @@ use ray::Ray;
 use sphere::Sphere;
 use camera::Camera;
 use rand::random;
-use material::{Lambertian, Metal};
+use material::{Dielectric, Lambertian, Metal};
 
 fn clamp(x: f32, min: f32, max: f32) -> f32 {
     if x < min {
@@ -125,42 +125,44 @@ fn main() {
      // Limit the number of child rays
     let max_depth = 50;
 
-    let material_ground = Box::new(Lambertian {
-        albedo: Vec3(0.8, 0.8, 0.0)
-    });
-    let material_center = Box::new(Lambertian {
-        albedo: Vec3(0.7, 0.3, 0.3)
-    });
-    let material_left = Box::new(Metal {
-        albedo: Vec3(0.8, 0.8, 0.8),
-        fuzz: 0.3
-    });
-    let material_right = Box::new(Metal {
-        albedo: Vec3(0.8, 0.6, 0.2),
-        fuzz: 1.0
-    });
 
     // World
     let world: Vec<Box<dyn Hittable>> = vec![
-        Box::new(Sphere { 
+        Box::new(Sphere {  // center sphere
             center: Vec3(0.0, 0.0, -1.0),
             radius: 0.5,
-            material: material_center
+            material: Box::new(Lambertian {
+                albedo: Vec3(0.1, 0.2, 0.5)
+            })
         }),
-        Box::new(Sphere { 
+        Box::new(Sphere {  // ground shpehre
             center: Vec3(0.0, -100.5, -1.0),
             radius: 100.0,
-            material: material_ground
+            material: Box::new(Lambertian {
+                albedo: Vec3(0.8, 0.8, 0.0)
+            })
         }),
-        Box::new(Sphere { 
+        Box::new(Sphere {  // left sphere
             center: Vec3(-1.0, 0.0, -1.0),
             radius: 0.5,
-            material: material_left
+            material: Box::new(Dielectric {
+                index_of_refraction: 1.5 // glass
+            })
         }),
-        Box::new(Sphere { 
+        Box::new(Sphere { // left sphere
+            center: Vec3(-1.0, 0.0, -1.0),
+            radius: -0.4, // the surface normal points inward
+             material: Box::new(Dielectric {
+                index_of_refraction: 1.5 // glass
+            })
+        }),
+        Box::new(Sphere {  // right sphere
             center: Vec3(1.0, 0.0, -1.0),
             radius: 0.5,
-            material: material_right
+            material: Box::new(Metal {
+                albedo: Vec3(0.8, 0.6, 0.2),
+                fuzz: 0.0
+            })
         }),
     ];
 

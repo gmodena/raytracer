@@ -48,6 +48,7 @@ impl Hittable for Sphere {
         let record = HitRecord {
             p,
             normal,
+            front_face,
             t,
             material
         };

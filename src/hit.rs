@@ -7,6 +7,7 @@ use crate::material::Material;
 pub struct HitRecord<'a> {
     pub p: Vec3,
     pub normal: Vec3,
+    pub front_face: bool,
     pub t: f32,
     pub material: &'a dyn Material
 }
