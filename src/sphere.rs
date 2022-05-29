@@ -1,15 +1,17 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::hit::{HitRecord, Hittable};
+use crate::material::Material;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+//#[derive(Clone, Debug, Copy, PartialEq)]
 pub struct Sphere {
     pub center: Vec3,
-    pub radius: f32
+    pub radius: f32,
+    pub material: Box<dyn Material>
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit<'a>(&'a self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
         let oc = r.origin() - self.center;
         let a = r.direction().length_squared();
         let half_b = oc.dot(r.direction());
@@ -42,10 +44,12 @@ impl Hittable for Sphere {
             - outward_normal
         };
        
+        let material = &*self.material;
         let record = HitRecord {
             p,
             normal,
-            t
+            t,
+            material
         };
 
         return Some(record);

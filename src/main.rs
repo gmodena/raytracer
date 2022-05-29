@@ -3,6 +3,7 @@ mod ray;
 mod hit;
 mod sphere;
 mod camera;
+mod material;
 
 use hit::{HitRecord, Hittable};
 use vec3::{Vec3,Color};
@@ -10,6 +11,7 @@ use ray::Ray;
 use sphere::Sphere;
 use camera::Camera;
 use rand::random;
+use material::{Lambertian, Metal};
 
 fn clamp(x: f32, min: f32, max: f32) -> f32 {
     if x < min {
@@ -79,6 +81,7 @@ fn hit_sphere(center: Vec3, radius: f32, r: Ray) -> f32 {
 ///
 /// - `r`: a struct defining origin and direction of  a ray.
 /// - `world`: a sphere implementing the `Hittable` interface. 
+/// - `depth`: max depth allowed when calling ray_color recursively.
 fn ray_color<T: Hittable>(r: Ray, world: &T, depth: u32) -> Vec3 {
     if depth <= 0 {
         return Vec3(0.0, 0.0, 0.0)
@@ -89,8 +92,13 @@ fn ray_color<T: Hittable>(r: Ray, world: &T, depth: u32) -> Vec3 {
  
     match has_hit {
         Some(record) => {
-            let target = record.p + vec3::random_in_hemisphere(record.normal);
-            ray_color(Ray(record.p, target - record.p), world, depth-1) * 0.5
+            match record.material.scatter(r, record) {
+                Some(scattered) => 
+                    scattered.attenuation * ray_color(scattered.r, world, depth-1),
+                None => {
+                    Vec3(0.0, 0.0, 0.0)
+                }
+            }
         }
         None => {
             let unit_direction: Vec3 = r.direction().unit_vector();
@@ -111,25 +119,50 @@ fn main() {
 
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
+    // Camera
+    let cam = Camera::new();
     let samples_per_pixel = 100;
+     // Limit the number of child rays
+    let max_depth = 50;
+
+    let material_ground = Box::new(Lambertian {
+        albedo: Vec3(0.8, 0.8, 0.0)
+    });
+    let material_center = Box::new(Lambertian {
+        albedo: Vec3(0.7, 0.3, 0.3)
+    });
+    let material_left = Box::new(Metal {
+        albedo: Vec3(0.8, 0.8, 0.8),
+        fuzz: 0.3
+    });
+    let material_right = Box::new(Metal {
+        albedo: Vec3(0.8, 0.6, 0.2),
+        fuzz: 1.0
+    });
 
     // World
     let world: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere { 
             center: Vec3(0.0, 0.0, -1.0),
-            radius: 0.5 
+            radius: 0.5,
+            material: material_center
         }),
         Box::new(Sphere { 
             center: Vec3(0.0, -100.5, -1.0),
-            radius: 100.0 
-        })
+            radius: 100.0,
+            material: material_ground
+        }),
+        Box::new(Sphere { 
+            center: Vec3(-1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: material_left
+        }),
+        Box::new(Sphere { 
+            center: Vec3(1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: material_right
+        }),
     ];
-
-    // Camera
-    let cam = Camera::new();
-
-    // Limit the number of child rays
-    let max_depth = 50;
 
     println!("P3\n{} {}\n{}", image_width, image_height, 255);
     for j in (0..image_height).rev() {
@@ -137,11 +170,11 @@ fn main() {
         for i in 0..image_width {
             let mut pixel_color = Vec3(0.0, 0.0, 0.0);
             for s in 0..samples_per_pixel {
-            let u: f32 = (i as f32 + random::<f32>()) / (image_width - 1) as f32;
-            let v: f32 = (j as f32 + random::<f32>()) / (image_height - 1) as f32;
+                let u: f32 = (i as f32 + random::<f32>()) / (image_width - 1) as f32;
+                let v: f32 = (j as f32 + random::<f32>()) / (image_height - 1) as f32;
 
-            let r = cam.get_ray(u, v);
-            pixel_color = pixel_color + ray_color(r, &world, max_depth);
+                let r = cam.get_ray(u, v);
+                pixel_color = pixel_color + ray_color(r, &world, max_depth);
             }
             write_color(pixel_color, samples_per_pixel);
        }

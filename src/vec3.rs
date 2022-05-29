@@ -62,6 +62,15 @@ impl Vec3 {
     pub fn unit_vector(self) -> Vec3 {
         self / self.length()
     }
+
+    pub fn near_zero(self) -> bool {
+        let s = 1e-8;
+        return f32::abs(self.0) < s && f32::abs(self.1) < s && f32::abs(self.2) < s 
+    }
+
+    pub fn reflect(self, n: Vec3) -> Vec3 {
+        self - n * self.dot(n) * 2.0
+    }
 }
 
 impl Neg for Vec3 {

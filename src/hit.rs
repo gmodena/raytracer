@@ -1,11 +1,14 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
+use crate::material::Material;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct HitRecord {
+//#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy)]
+pub struct HitRecord<'a> {
     pub p: Vec3,
     pub normal: Vec3,
-    pub t: f32
+    pub t: f32,
+    pub material: &'a dyn Material
 }
 
 pub trait Hittable {
