@@ -56,7 +56,9 @@ impl Vec3 {
     }
 
     pub fn cross(self, v: Vec3) -> Vec3 {
-        Vec3(self.1 * v.2 - self.2 * v.1, self.0 * v.0 - self.0 * v.2, self.0 * v.1 - self.1 * v.0)
+        Vec3(self.1 * v.2 - self.2 * v.1, 
+             self.2 * v.0 - self.0 * v.2, 
+             self.0 * v.1 - self.1 * v.0)
     }
 
     pub fn unit_vector(self) -> Vec3 {
