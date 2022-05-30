@@ -10,7 +10,7 @@ use vec3::{Vec3,Color};
 use ray::Ray;
 use sphere::Sphere;
 use camera::Camera;
-use rand::random;
+use rand::{Rng, random};
 use material::{Dielectric, Lambertian, Metal};
 
 fn clamp(x: f32, min: f32, max: f32) -> f32 {
@@ -112,6 +112,73 @@ fn ray_color<T: Hittable>(r: Ray, world: &T, depth: u32) -> Vec3 {
     }
 }
 
+fn hittable_world_random_scene() -> Vec<Box<dyn Hittable>> {
+    let mut rng = rand::thread_rng();
+    let mut world: Vec<Box<dyn Hittable>> = vec![ 
+        Box::new(Sphere {
+            center: Vec3(0.0, -1000.0, 0.0),
+            radius: 1000.0,
+            material: Box::new(Lambertian {
+                albedo: Vec3(0.5, 0.5, 0.5)
+            })
+        })
+    ];
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let chose_mat = random::<f32>();
+            let center = Vec3(a as f32 + 0.9 * random::<f32>(), 0.2, b as f32 + 0.9 * random::<f32>());
+            if (center - Vec3(4.0, 0.2, 0.0)).length() > 0.9 {
+                if chose_mat < 0.8 {
+                // diffuse
+                    let albedo = vec3::random(Some(0.0), Some(1.0)) * vec3::random(Some(0.0), Some(1.0));
+                    let material = Box::new(Lambertian{albedo});
+                    let radius = 0.2;
+                    world.push(Box::new(Sphere { center, radius, material }));
+                } else if chose_mat < 0.95 {
+                    // metal
+                    let albedo = vec3::random(Some(0.5), Some(1.0));
+                    let fuzz = rng.gen_range(0.0..=0.5);
+                    let material = Box::new(Metal{albedo, fuzz});
+                    let radius = 0.2;
+                    world.push(Box::new(Sphere { center, radius, material }))
+                } else {
+                    // glass
+                    let material = Box::new(Dielectric { index_of_refraction: 1.5 });
+                    let radius = 0.2;
+                    world.push(Box::new(Sphere { center, radius, material }))
+                }
+
+            }
+        }
+    }
+
+    world.push(Box::new(Sphere{ 
+        center: Vec3(0.0, 1.0, 0.0),
+        radius: 1.0,
+        material: Box::new(Dielectric {
+            index_of_refraction: 1.5 
+        })
+    }));
+
+    world.push(Box::new(Sphere{ 
+        center: Vec3(-4.0, 1.0, 0.0),
+        radius: 1.0,
+        material: Box::new(Lambertian {
+            albedo: Vec3(0.4, 0.2, 0.1) 
+        })
+    }));
+
+    world.push(Box::new(Sphere{ 
+       center: Vec3(4.0, 1.0, 0.0),
+       radius: 1.0,
+       material: Box::new(Metal {
+           albedo: Vec3(0.7, 0.6, 0.5),
+           fuzz: 0.0
+       })
+    }));
+    world
+}
 
 fn main() {
     // World
@@ -119,75 +186,25 @@ fn main() {
 
 
     // Image
-    let aspect_ratio: f32 = 16.0 / 9.0;
+    let aspect_ratio: f32 = 3.0 / 2.0;
 
-    let image_width = 400;
+    let image_width = 1200;
     let image_height = (image_width as f32 / aspect_ratio) as i32;
     // Camera
-    let lookfrom = Vec3(3.0, 3.0, 2.0);
-    let lookat = Vec3(0.0, 0.0, -1.0);
+    let lookfrom = Vec3(13.0, 2.0, 3.0);
+    let lookat = Vec3(0.0, 0.0, 0.0);
     let vup = Vec3(0.0, 1.0, 0.0);
-    let dist_to_focus = (lookfrom-lookat).length();
-    let cam = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, 2.0, dist_to_focus);
-    let samples_per_pixel = 100;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
+
+    let cam = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus);
+    let samples_per_pixel = 500;
      // Limit the number of child rays
     let max_depth = 50;
 
 
     // World
-    let world: Vec<Box<dyn Hittable>> = vec![
- /*       Box::new(Sphere {  
-            center: Vec3(-R, 0.0, -1.0),
-            radius: R,
-            material: Box::new(Lambertian {
-                albedo: Vec3(0.0, 0.0, 1.0)
-            })
-        }),
-        Box::new(Sphere {
-            center: Vec3(R, 0.0, -1.0),
-            radius: R,
-            material: Box::new(Lambertian {
-                albedo: Vec3(1.0, 0.0, 0.0)
-            })
-        }),
-*/
-        Box::new(Sphere {  // center sphere
-            center: Vec3(0.0, 0.0, -1.0),
-            radius: 0.5,
-            material: Box::new(Lambertian {
-                albedo: Vec3(0.1, 0.2, 0.5)
-            })
-        }),
-        Box::new(Sphere {  // ground shpehre
-            center: Vec3(0.0, -100.5, -1.0),
-            radius: 100.0,
-            material: Box::new(Lambertian {
-                albedo: Vec3(0.8, 0.8, 0.0)
-            })
-        }),
-        Box::new(Sphere {  // left sphere
-            center: Vec3(-1.0, 0.0, -1.0),
-            radius: 0.5,
-            material: Box::new(Dielectric {
-                index_of_refraction: 1.5 // glass
-            })
-        }),
-        Box::new(Sphere { // left sphere
-            center: Vec3(-1.0, 0.0, -1.0),
-            radius: -0.45, // the surface normal points inward
-             material: Box::new(Dielectric {
-                index_of_refraction: 1.5 // glass
-            })
-        }),
-        Box::new(Sphere {  // right sphere
-            center: Vec3(1.0, 0.0, -1.0),
-            radius: 0.5,
-            material: Box::new(Metal {
-                albedo: Vec3(0.8, 0.6, 0.2),
-                fuzz: 0.0
-            })
-        }),
-    ];
+    let world: Vec<Box<dyn Hittable>> = hittable_world_random_scene();
 
     println!("P3\n{} {}\n{}", image_width, image_height, 255);
     for j in (0..image_height).rev() {

@@ -1,7 +1,8 @@
 use std::ops::{Neg, Add, Sub, Div, Mul};
 use rand::{thread_rng, Rng};
 
-fn random(min: Option<f32>, max: Option<f32>) -> Vec3 {
+
+pub fn random(min: Option<f32>, max: Option<f32>) -> Vec3 {
     let mut rng = thread_rng();
 
     let a = min.unwrap_or(0.0);
