@@ -34,7 +34,7 @@ impl Dielectric {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, r_in: Ray, record: HitRecord) -> Option<Scatter> {
+    fn scatter(&self, _r_in: Ray, record: HitRecord) -> Option<Scatter> {
         let scatter_direction = if (record.normal + vec3::random_unit_vector()).near_zero() {
             record.normal
         } else {

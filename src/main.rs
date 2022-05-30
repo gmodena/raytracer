@@ -181,10 +181,6 @@ fn hittable_world_random_scene() -> Vec<Box<dyn Hittable>> {
 }
 
 fn main() {
-    // World
-    let R = (std::f32::consts::PI/4.0).tan();
-
-
     // Image
     let aspect_ratio: f32 = 3.0 / 2.0;
 
@@ -211,7 +207,7 @@ fn main() {
         eprintln!("Scanlines remaining: {}", j);
         for i in 0..image_width {
             let mut pixel_color = Vec3(0.0, 0.0, 0.0);
-            for s in 0..samples_per_pixel {
+            for _s in 0..samples_per_pixel {
                 let u: f32 = (i as f32 + random::<f32>()) / (image_width - 1) as f32;
                 let v: f32 = (j as f32 + random::<f32>()) / (image_height - 1) as f32;
 
